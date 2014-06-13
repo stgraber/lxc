@@ -1,0 +1,67 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#
+# lxc: New LXC command line client
+#
+# Authors:
+# Stephane Graber <stgraber@ubuntu.com> (Canonical Ltd. 2014)
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+import os
+import re
+import shutil
+import sys
+import unittest
+
+coverage = True
+try:
+    from coverage import coverage
+    cov = coverage()
+    cov.start()
+except ImportError:
+    print("No coverage report, make sure python-coverage is installed")
+    coverage = False
+
+sys.path.insert(0, '.')
+
+if len(sys.argv) > 1:
+    test_filter = sys.argv[1]
+else:
+    test_filter = ''
+
+tests = [t[:-3] for t in os.listdir('tests')
+         if t.startswith('test_') and t.endswith('.py') and
+         re.search(test_filter, t)]
+tests.sort()
+suite = unittest.TestLoader().loadTestsFromNames(tests)
+res = unittest.TextTestRunner(verbosity=2).run(suite)
+
+def get_coverage():
+    files = []
+    for directory in os.walk("lxccmd"):
+        for entry in directory[2]:
+            if entry.endswith(".py"):
+                files.append(os.path.join(directory[0], entry))
+    return files
+
+if coverage:
+    if os.path.exists('tests/coverage'):
+        shutil.rmtree('tests/coverage')
+    cov.stop()
+    cov.html_report(include=get_coverage(),
+                    directory='tests/coverage')
+    print("")
+    cov.report(include=get_coverage())

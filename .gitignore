@@ -7,6 +7,9 @@
 *.conf
 *~
 *.gz
+*.pyc
+*.swp
+*/__pycache__/
 
 .deps
 .libs
@@ -75,8 +78,10 @@ src/lxc/legacy/lxc-ls
 src/lxc/lxc-user-nic
 src/lxc/version.h
 
+src/lxccmd/po/*.mo
+src/lxccmd/tests/coverage/
+
 src/python-lxc/build/
-src/python-lxc/lxc/__pycache__/
 
 src/tests/lxc-test-device-add-remove
 src/tests/lxc-test-attach

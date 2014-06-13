@@ -1,0 +1,89 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#
+# lxc: New LXC command line client
+#
+# Authors:
+# Stephane Graber <stgraber@ubuntu.com> (Canonical Ltd. 2014)
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+# Import everything we need
+import argparse
+import gettext
+import logging
+import os
+import sys
+
+# Make it possible to run straight from the branch
+sys.path.insert(0, os.path.join(sys.path[0], os.pardir))
+
+from lxccmd.commands import get_commands
+from lxccmd.certs import generate_cert
+
+# Setup i18n
+_ = gettext.gettext
+gettext.textdomain("lxccmd")
+
+# Setup logging
+log_formatter = logging.Formatter(
+    "[%(asctime)s] %(levelname)s %(funcName)s: %(message)s")
+log_stderr = logging.StreamHandler(sys.stderr)
+log_stderr.setFormatter(log_formatter)
+log_stderr.setLevel(1)
+logging.root.addHandler(log_stderr)
+logging.root.setLevel(os.getenv("DEBUG", "CRITICAL").upper())
+
+# Generate a client certificate if needed
+generate_cert("client")
+
+# Load all the available commands
+commands = get_commands()
+
+# Argument parsing
+parser = argparse.ArgumentParser(
+    description=_("LXC - Container management tool"))
+parser.add_argument(
+    "--remote", type=str, default=None,
+    help=_("Remote host to run the command against."))
+parser.add_argument(
+    "--debug", type=str,
+    choices=("critical", "error", "warning", "info", "debug"),
+    help=_("The debug level. (default is critical)"),
+    default=None)
+
+## Load the sub-parsers
+subparsers = parser.add_subparsers()
+
+### Trick to have a consistent behavior for 2.x and 3.x
+if hasattr(subparsers, "required"):
+    subparsers.required = True
+    subparsers.dest = _("command")
+
+for cmd_name, cmd_module in sorted(commands.items()):
+    if not hasattr(cmd_module, "cli_subparser"):
+        logging.debug("Ignoring %s: Missing command line arg parser." %
+                      cmd_name)
+        continue
+
+    cmd_module.cli_subparser(subparsers)
+
+args = parser.parse_args()
+
+# Set the debug level if specified
+if args.debug:
+    logging.root.setLevel(args.debug.upper())
+
+args.func(parser, args)
