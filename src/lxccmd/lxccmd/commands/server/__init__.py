@@ -55,24 +55,53 @@ class ThreadingServer(ThreadingMixIn, HTTPServer):
 
 
 class RequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        print(self.connection.getpeercert())
-        if "GET:%s" % self.path not in self.server.exported_functions:
-            self.send_response(404)
+    def handle_one_request(self):
+        """
+            Handle a single HTTP request.
+            Mostly copy/paste from the original function.
+        """
+        try:
+            self.raw_requestline = self.rfile.readline(65537)
+            if len(self.raw_requestline) > 65536:
+                self.requestline = ''
+                self.request_version = ''
+                self.command = ''
+                self.send_error(414)
+                return
+            if not self.raw_requestline:
+                self.close_connection = 1
+                return
+            if not self.parse_request():
+                # An error code has been sent, just exit
+                return
+
+            # Actual processing happens here
+            if "%s:%s" % (self.command, self.path) \
+                    not in self.server.exported_functions:
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write(
+                    json.dumps(
+                        {'error': "No matching function"},
+                        sort_keys=True, indent=4,
+                        separators=(',', ': ')).encode())
+                return
+
+            self.send_response(200)
+            self.send_header("Content-type:", "application/json")
             self.end_headers()
             self.wfile.write(
                 json.dumps(
-                    {'error': "No matching function"},
+                    self.server.exported_functions["%s:%s" %
+                                                   (self.command,
+                                                    self.path)](),
                     sort_keys=True, indent=4, separators=(',', ': ')).encode())
-            return
 
-        self.send_response(200)
-        self.send_header("Content-type:", "application/json")
-        self.end_headers()
-        self.wfile.write(
-            json.dumps(
-                self.server.exported_functions["GET:%s" % self.path](),
-                sort_keys=True, indent=4, separators=(',', ': ')).encode())
+            self.wfile.flush()
+        except socket.timeout as e:
+            self.log_error("Request timed out: %r", e)
+            self.close_connection = 1
+            return
 
 
 # CLI functions
@@ -214,7 +243,6 @@ def cli_forget(parser, args):
 
 
 def cli_set(parser, args):
-    print("Set")
     pass
 
 

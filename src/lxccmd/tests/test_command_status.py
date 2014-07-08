@@ -264,6 +264,7 @@ class StatusTests(unittest.TestCase):
 
     def test_cli_status(self):
         parser = argparse.ArgumentParser()
+        parser.add_argument("--remote", default=None)
         subparsers = parser.add_subparsers()
         status.cli_subparser(subparsers)
 
