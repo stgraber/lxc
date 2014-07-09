@@ -22,9 +22,52 @@
 # Import everything we need
 import os
 
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import ConfigParser
 
-def config_get_string(section, key, default=None):
-    return None
+
+def config_get(section, key, default=None, answer_type=str):
+    """
+        Queries the lxccmd configuration file.
+    """
+
+    config_file = "%s/lxccmd.conf" % get_config_path()
+
+    config = ConfigParser()
+    config.read(config_file)
+
+    if not config.has_option(section, key):
+        return default
+
+    value = config.get(section, key)
+    if answer_type == list:
+        value = value.split(", ")
+
+    return value
+
+
+def config_set(section, key, value):
+    """
+        Sets a key in the configuration file.
+    """
+
+    config_file = "%s/lxccmd.conf" % get_config_path()
+
+    config = ConfigParser()
+    config.read(config_file)
+
+    if isinstance(value, list):
+        value = ", ".join(value)
+
+    if not config.has_section(section):
+        config.add_section(section)
+
+    config.set(section, key, str(value))
+
+    with open(config_file, "w+") as fd:
+        config.write(fd)
 
 
 def get_config_path():
@@ -43,7 +86,7 @@ def get_run_path():
         Returns the path to the runtime directory.
     """
 
-    run_path = config_get_string("global", "run_path")
+    run_path = config_get("global", "run_path")
     if run_path:
         return run_path
 
