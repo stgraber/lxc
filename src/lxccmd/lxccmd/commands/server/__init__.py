@@ -33,6 +33,7 @@ from lxccmd.certs import generate_cert, get_cert_path, \
     trust_cert_add, trust_cert_list, trust_cert_remove, trust_cert_verify
 from lxccmd.config import get_run_path
 from lxccmd.cli import render_table
+from lxccmd.exceptions import LXCError
 from lxccmd.network import server_is_running
 
 try:
@@ -159,16 +160,16 @@ def cli_subparser(sp):
     sp_set.set_defaults(func=cli_set)
 
 
-def cli_status(parser, args):
+def cli_status(args):
     render_table([[_("Running"), _("Trusted clients")],
                   [str(server_is_running()),
                    ", ".join(trust_cert_list("server"))]],
                  header=True, orientation="vertical")
 
 
-def cli_start(parser, args):
+def cli_start(args):
     if server_is_running():
-        parser.error(_("A server is already running!"))
+        raise LXCError(_("A server is already running!"))
 
     # Get or generate the server certificate
     generate_cert("server")
@@ -210,14 +211,14 @@ def cli_start(parser, args):
     httpd.serve_forever()
 
 
-def cli_stop(parser, args):
+def cli_stop(args):
     if not server_is_running():
-        parser.error(_("The server isn't running at the moment!"))
+        raise LXCError(_("The server isn't running at the moment!"))
 
     server_pid_path = os.path.join(get_run_path(), "server.pid")
 
     if not os.path.exists(server_pid_path):
-        parser.error(_("No PID on record for running server!"))
+        raise LXCError(_("No PID on record for running server!"))
 
     with open(server_pid_path, "r") as fd:
         server_pid = int(fd.read().strip())
@@ -227,18 +228,18 @@ def cli_stop(parser, args):
     os.kill(server_pid, 9)
 
 
-def cli_trust(parser, args):
+def cli_trust(args):
     if not os.path.exists(args.client_cert):
-        parser.error(_("The file doesn't exist."))
+        raise LXCError(_("The file doesn't exist."))
 
     with open(args.client_cert, "r") as fd:
         certificate = fd.read()
 
     if not trust_cert_add(certificate, "server"):
-        parser.error(_("Failed to add the certificate to the trust store."))
+        raise LXCError(_("Failed to add the certificate to the trust store."))
 
 
-def cli_forget(parser, args):
+def cli_forget(args):
     if os.path.exists(args.clientid):
         with open(args.clientid, "r") as fd:
             certificate = fd.read()
@@ -246,11 +247,11 @@ def cli_forget(parser, args):
         certificate = args.clientid
 
     if not trust_cert_remove(certificate, "server"):
-        parser.error(
+        raise LXCError(
             _("Failed to remove the certificate from the trust store."))
 
 
-def cli_set(parser, args):
+def cli_set(args):
     pass
 
 

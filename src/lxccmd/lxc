@@ -32,6 +32,7 @@ sys.path.insert(0, os.path.join(sys.path[0], os.pardir))
 
 from lxccmd.commands import get_commands
 from lxccmd.certs import generate_cert
+from lxccmd.exceptions import LXCError
 
 # Setup i18n
 _ = gettext.gettext
@@ -86,4 +87,7 @@ args = parser.parse_args()
 if args.debug:
     logging.root.setLevel(args.debug.upper())
 
-args.func(parser, args)
+try:
+    args.func(args)
+except LXCError as e:
+    parser.error(e)

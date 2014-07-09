@@ -272,7 +272,7 @@ class StatusTests(unittest.TestCase):
 
         sys.stdout = StringIO()
         args = parser.parse_args(["status"])
-        args.func(parser, args)
+        args.func(args)
 
         self.assertEquals(len(sys.stdout.getvalue().strip().split("\n")), 7)
 

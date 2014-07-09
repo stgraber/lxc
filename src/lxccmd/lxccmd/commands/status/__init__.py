@@ -145,7 +145,7 @@ def cli_subparser(sp):
     parser.set_defaults(func=cli_status)
 
 
-def cli_status(parser, args):
+def cli_status(args):
     keys = []
     values = []
 
