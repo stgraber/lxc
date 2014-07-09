@@ -147,3 +147,22 @@ def trust_cert_remove(x509_cert, trust_store):
             return False
 
     return True
+
+
+def trust_cert_verify(x509_cert, trust_store):
+    """
+        Check if a certificate is currently present in the given trust store.
+    """
+
+    try:
+        fingerprint = hashlib.sha1(
+            ssl.PEM_cert_to_DER_cert(x509_cert)).hexdigest()
+    except:
+        fingerprint = x509_cert
+
+    store = get_cert_path(trust_store)[2]
+
+    if not os.path.exists(os.path.join(store, "%s.crt" % fingerprint)):
+        return False
+
+    return True

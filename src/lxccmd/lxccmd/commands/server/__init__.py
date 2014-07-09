@@ -30,7 +30,7 @@ import sys
 
 from lxccmd.commands import get_commands
 from lxccmd.certs import generate_cert, get_cert_path, \
-    trust_cert_add, trust_cert_list, trust_cert_remove
+    trust_cert_add, trust_cert_list, trust_cert_remove, trust_cert_verify
 from lxccmd.config import get_run_path
 from lxccmd.cli import render_table
 from lxccmd.network import server_is_running
@@ -60,6 +60,16 @@ class RequestHandler(BaseHTTPRequestHandler):
             Handle a single HTTP request.
             Mostly copy/paste from the original function.
         """
+
+        if not trust_cert_verify(
+                ssl.DER_cert_to_PEM_cert(
+                    self.connection.getpeercert(binary_form=True)), "server"):
+            self.requestline = ''
+            self.request_version = ''
+            self.command = ''
+            self.send_error(401)
+            return
+
         try:
             self.raw_requestline = self.rfile.readline(65537)
             if len(self.raw_requestline) > 65536:
