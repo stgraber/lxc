@@ -61,14 +61,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             Mostly copy/paste from the original function.
         """
 
-        if not trust_cert_verify(
-                ssl.DER_cert_to_PEM_cert(
-                    self.connection.getpeercert(binary_form=True)), "server"):
-            self.requestline = ''
-            self.request_version = ''
-            self.command = ''
-            self.send_error(401)
-            return
+        # Validate the connection
+        peer_cert = self.connection.getpeercert(binary_form=True)
+        if not peer_cert:
+            role = "guest"
+        elif trust_cert_verify(ssl.DER_cert_to_PEM_cert(peer_cert), "server"):
+            role = "trusted"
+        else:
+            role = "untrusted"
 
         try:
             self.raw_requestline = self.rfile.readline(65537)
@@ -86,8 +86,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return
 
             # Actual processing happens here
-            if "%s:%s" % (self.command, self.path) \
-                    not in self.server.exported_functions:
+            signature = (role, self.command, self.path)
+            if signature not in self.server.exported_functions:
                 self.send_response(404)
                 self.end_headers()
                 self.wfile.write(
@@ -102,9 +102,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(
                 json.dumps(
-                    self.server.exported_functions["%s:%s" %
-                                                   (self.command,
-                                                    self.path)](),
+                    self.server.exported_functions[signature](),
                     sort_keys=True, indent=4, separators=(',', ': ')).encode())
 
             self.wfile.flush()
@@ -258,8 +256,8 @@ def cli_set(parser, args):
 
 # REST functions
 def rest_functions():
-    return {"GET:/": rest_root}
+    return {("guest", "GET", "/server/trust"): rest_trust}
 
 
-def rest_root():
+def rest_trust():
     return {}

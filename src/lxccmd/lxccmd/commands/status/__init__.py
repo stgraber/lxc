@@ -163,4 +163,4 @@ def cli_status(parser, args):
 
 # REST functions
 def rest_functions():
-    return {'GET:/status': get_status}
+    return {("trusted", "GET", "/status"): get_status}
