@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2014-06-11 15:54+EDT\n"
+"POT-Creation-Date: 2014-07-10 10:00+EDT\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,15 +15,174 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: ../lxc:54
-msgid "LXC - Container management tool"
+#: ../lxccmd/commands/server/__init__.py:118
+msgid "Server control"
 msgstr ""
 
-#: ../lxc:58
-msgid "The debug level. (default is critical)"
+#: ../lxccmd/commands/server/__init__.py:124
+msgid "action"
 msgstr ""
 
-#: ../lxccmd/commands/status/__init__.py:32
+#: ../lxccmd/commands/server/__init__.py:128
+msgid "Get status information"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:131
+msgid "Start the server"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:133
+msgid "Start the server in the foreground."
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:136
+msgid "Stop the server"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:141
+msgid "Allow trusted connections from a client"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:143
+msgid "Certificate of the trusted client."
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:147
+msgid "Cancel an existing trust relationship"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:149
+msgid "ID (hash) of the trusted client."
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:155
+msgid "Get/set a configuration property (empty string to unset)"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:157
+msgid "Configuration key"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:159
+msgid "Configuration value"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:164
+msgid "Trusted clients"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:164
+#: ../lxccmd/commands/status/__init__.py:113
+msgid "Running"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:165
+msgid "Port"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:165
+msgid "Trust password"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:175
+msgid "A server is already running!"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:220
+msgid "The server isn't running at the moment!"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:225
+msgid "No PID on record for running server!"
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:237
+msgid "The file doesn't exist."
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:243
+msgid "Failed to add the certificate to the trust store."
+msgstr ""
+
+#: ../lxccmd/commands/server/__init__.py:255
+msgid "Failed to remove the certificate from the trust store."
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:48
+#: ../lxccmd/commands/status/__init__.py:60
+msgid "Unknown"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:50
+msgid "Kernel version"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:62
+msgid "LXC version"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:98
+msgid "Running as root on the host"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:99
+msgid "Running as root inside a container"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:100
+msgid "Running as root on the host inside a user namespace"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:101
+msgid "Running as root inside an unprivileged container"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:102
+msgid "Running as user on the host"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:103
+msgid "Running as a user inside a container"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:104
+msgid "Running as a user on the host inside a user namespace"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:105
+msgid "Running as a user inside an unprivileged container"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:107
+msgid "Running mode"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:116
+msgid "Stopped"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:119
+msgid "Server state"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:124
+msgid "Client ID"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:126
+#: ../lxccmd/commands/status/__init__.py:132
+msgid "Not generated"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:130
+msgid "Server ID"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:135
+msgid "Hostname"
+msgstr ""
+
+#: ../lxccmd/commands/status/__init__.py:144
 msgid "System status"
 msgstr ""
 
