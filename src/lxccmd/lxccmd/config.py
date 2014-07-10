@@ -43,9 +43,9 @@ def config_get(section, key, default=None, answer_type=str):
 
     value = config.get(section, key)
     if answer_type == list:
-        value = value.split(", ")
+        return value.split(", ")
 
-    return value
+    return answer_type(value)
 
 
 def config_set(section, key, value):
@@ -64,7 +64,10 @@ def config_set(section, key, value):
     if not config.has_section(section):
         config.add_section(section)
 
-    config.set(section, key, str(value))
+    if value is None:
+        config.remove_option(section, key)
+    else:
+        config.set(section, key, str(value))
 
     with open(config_file, "w+") as fd:
         config.write(fd)
