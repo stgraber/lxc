@@ -20,15 +20,21 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 # Import everything we need
+import gettext
 import json
 import socket
+import ssl
 
 from lxccmd.certs import get_cert_path
+from lxccmd.exceptions import LXCError
 
 try:
     from http.client import HTTPSConnection
 except:
     from httplib import HTTPSConnection
+
+# Setup i18n
+_ = gettext.gettext
 
 
 def server_is_running():
@@ -47,21 +53,24 @@ def server_is_running():
         return True
 
 
-def secure_remote_call(target, method, path, **args):
+def secure_remote_call(target, method, path, role="client", **args):
     """
         Call a function using the authenticated REST API.
     """
 
     client_crt, client_key, client_capath = get_cert_path("client")
 
-    conn = HTTPSConnection(target, 8443,
-                           key_file=client_key,
-                           cert_file=client_crt)
-    conn.request(method, path)
-    response = conn.getresponse()
-    conn.close()
+    try:
+        conn = HTTPSConnection(target, 8443,
+                               key_file=client_key,
+                               cert_file=client_crt)
+        conn.request(method, path)
+        response = conn.getresponse()
+        conn.close()
+    except ssl.SSLError:
+        raise LXCError(_("Remote function isn't available."))
 
     if response.status != 200:
-        return False
+        raise LXCError(_("Remote function isn't available."))
 
     return json.loads(response.read().decode())
