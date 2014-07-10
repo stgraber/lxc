@@ -41,6 +41,13 @@ def config_get(section, key, default=None, answer_type=str):
     if not config.has_option(section, key):
         return default
 
+    if answer_type == bool:
+        return config.getboolean(section, key)
+    elif answer_type == int:
+        return config.getint(section, key)
+    elif answer_type == float:
+        return config.getfloat(section, key)
+
     value = config.get(section, key)
     if answer_type == list:
         return value.split(", ")
