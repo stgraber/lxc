@@ -28,10 +28,10 @@ import socket
 import ssl
 import sys
 
-from lxccmd.commands import get_commands
 from lxccmd.certs import generate_cert, get_cert_path, \
     trust_cert_add, trust_cert_list, trust_cert_remove, trust_cert_verify
-from lxccmd.config import get_run_path
+from lxccmd.commands import get_commands
+from lxccmd.config import get_run_path, config_get, config_set
 from lxccmd.cli import render_table
 from lxccmd.exceptions import LXCError
 from lxccmd.network import server_is_running
@@ -153,17 +153,20 @@ def cli_subparser(sp):
     sp_set = subparsers.add_parser(
         "set",
         help=_("Get/set a configuration property (empty string to unset)"))
-    sp_set.add_argument("key", metavar="KEY", type=str, nargs=1,
+    sp_set.add_argument("key", metavar="KEY", type=str,
                         help=_("Configuration key"))
     sp_set.add_argument("value", metavar="VALUE", type=str, nargs="?",
-                        help=_("Configuration value"))
+                        default=None, help=_("Configuration value"))
     sp_set.set_defaults(func=cli_set)
 
 
 def cli_status(args):
-    render_table([[_("Running"), _("Trusted clients")],
+    render_table([[_("Running"), _("Trusted clients"),
+                   _("Trust password"), _("Port")],
                   [str(server_is_running()),
-                   ", ".join(trust_cert_list("server"))]],
+                   ", ".join(trust_cert_list("server")),
+                   config_get("server", "password", "<none>"),
+                   config_get("server", "port", "8443")]],
                  header=True, orientation="vertical")
 
 
@@ -182,7 +185,8 @@ def cli_start(args):
         if hasattr(command_module, "rest_functions"):
             exported_functions.update(command_module.rest_functions())
 
-    httpd = ThreadingServer(('::', 8443), RequestHandler)
+    httpd = ThreadingServer(('::', config_get("server", "port", 8443, int)),
+                            RequestHandler)
     httpd.exported_functions = exported_functions
 
     httpd.socket = ssl.wrap_socket(httpd.socket, server_side=True,
@@ -252,7 +256,13 @@ def cli_forget(args):
 
 
 def cli_set(args):
-    pass
+    if args.value is None:
+        print("%s = %s" % (args.key, config_get("server", args.key, "<none>")))
+        return
+
+    if not args.value:
+        args.value = None
+    config_set("server", args.key, args.value)
 
 
 # REST functions
