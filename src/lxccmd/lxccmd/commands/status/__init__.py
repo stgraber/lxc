@@ -34,7 +34,7 @@ _ = gettext.gettext
 
 
 # Main functions
-def get_status():
+def get_status(args=None):
     status = {}
 
     # Kernel version

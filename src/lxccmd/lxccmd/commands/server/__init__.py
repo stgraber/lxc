@@ -98,12 +98,19 @@ class RequestHandler(BaseHTTPRequestHandler):
                         separators=(',', ': ')).encode())
                 return
 
+            args = None
+            try:
+                content_len = int(self.headers['content-length'])
+                args = json.loads(self.rfile.read(content_len).decode())
+            except:
+                pass
+
             self.send_response(200)
             self.send_header("Content-type:", "application/json")
             self.end_headers()
             self.wfile.write(
                 json.dumps(
-                    self.server.exported_functions[signature](),
+                    self.server.exported_functions[signature](args=args),
                     sort_keys=True, indent=4, separators=(',', ': ')).encode())
 
             self.wfile.flush()
@@ -193,6 +200,7 @@ def cli_start(args):
                                    certfile=server_crt,
                                    keyfile=server_key,
                                    cert_reqs=ssl.CERT_OPTIONAL)
+    httpd.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     httpd.socket._context.load_verify_locations(capath=server_capath)
 
     if not args.foreground:
@@ -267,8 +275,20 @@ def cli_set(args):
 
 # REST functions
 def rest_functions():
-    return {("guest", "GET", "/server/trust"): rest_trust}
+    return {("guest", "POST", "/server/trust"): rest_trust_add_as_guest}
 
 
-def rest_trust():
-    return {}
+def rest_trust_add_as_guest(args):
+    if not isinstance(args, dict) or not "password" in args \
+            or "cert" not in args:
+        raise LXCError(_("Invalid request"))
+
+    password = config_get("server", "password")
+
+    if not password or args['password'] != password:
+        raise LXCError(_("Invalid password"))
+
+    if not trust_cert_add(args['cert'], "server"):
+        raise LXCError(_("Failed to add the certificate to the trust store."))
+
+    return {'success': _("Certificate successfuly added to the trust store.")}

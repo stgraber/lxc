@@ -38,6 +38,7 @@ def server_is_running():
 
     try:
         sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(("::", 8443))
         sock.close()
 
