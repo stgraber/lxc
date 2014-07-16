@@ -124,7 +124,8 @@ def secure_remote_call(host, port, method, path, cert="client", data=None):
     except:
         raise LXCError(_("Remote function isn't available."))
 
-    if response.status != 200:
+    if response.status == 404:
         raise LXCError(_("Remote function isn't available."))
 
-    return json.loads(response.read().decode())
+    value = response.read().decode()
+    return json.loads(value)

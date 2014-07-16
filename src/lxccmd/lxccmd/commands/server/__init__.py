@@ -21,6 +21,7 @@
 
 # Import everything we need
 import gettext
+import hashlib
 import json
 import logging
 import os
@@ -109,7 +110,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 ret = self.server.exported_functions[signature](args=args)
                 self.send_response(200)
             except LXCError as e:
-                ret = {'error': e}
+                ret = {'error': str(e)}
                 self.send_response(500)
 
             self.send_header("Content-type:", "application/json")
@@ -174,10 +175,10 @@ def cli_subparser(sp):
 
 def cli_status(args):
     render_table([[_("Running"), _("Trusted clients"),
-                   _("Trust password"), _("Port")],
+                   _("Password set"), _("Port")],
                   [str(server_is_running()),
                    ", ".join(trust_cert_list("server")),
-                   config_get("server", "password", "<none>"),
+                   "True" if config_get("server", "password") else "False",
                    config_get("server", "port", "8443")]],
                  header=True, orientation="vertical")
 
@@ -275,6 +276,10 @@ def cli_set(args):
 
     if not args.value:
         args.value = None
+
+    if args.key == "password":
+        args.value = hashlib.sha256(args.value.encode()).hexdigest()
+
     config_set("server", args.key, args.value)
 
 
@@ -300,7 +305,8 @@ def rest_trust_add_as_guest(args):
 
     password = config_get("server", "password")
 
-    if not password or args['password'] != password:
+    if not password or \
+            hashlib.sha256(args['password'].encode()).hexdigest() != password:
         raise LXCError(_("Invalid password"))
 
     if not trust_cert_add(args['cert'], "server"):
