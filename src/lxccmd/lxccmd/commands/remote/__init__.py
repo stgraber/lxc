@@ -22,7 +22,8 @@
 # Import everything we need
 import gettext
 
-from lxccmd.config import config_has_section, config_list_sections
+from lxccmd.config import config_has_section, config_list_sections, \
+    config_remove_section, config_get, config_set
 from lxccmd.exceptions import LXCError
 from lxccmd.network import remote_get_fingerprint, remote_get_role, \
     remote_add_trusted
@@ -105,7 +106,9 @@ def cli_add_remote(args):
         if "success" not in res:
             raise LXCError(_("Invalid password."))
 
-#    remote_add(args.name, args.url, fingerprint)
+    config_set("remote/%s" % args.name, "url", args.url)
+    config_set("remote/%s" % args.name, "fingerprint", fingerprint)
+    config_set("remote/%s" % args.name, "type", "lxc-rest")
 
 
 def cli_list_remote(args):
@@ -113,12 +116,18 @@ def cli_list_remote(args):
         if not entry.startswith("remote/"):
             continue
 
-        print(entry.split("remote/", 1)[-1])
+        remote_name = entry.split("remote/", 1)[-1]
+        remote_url = config_get(entry, "url")
+        remote_fingerprint = config_get(entry, "fingerprint")
+
+        print(" - %s (%s, %s)" % (remote_name, remote_url, remote_fingerprint))
 
 
 def cli_remove_remote(args):
     if not config_has_section("remote/%s" % args.name):
         raise LXCError(_("Remote '%s' doesn't exist." % args.name))
+
+    config_remove_section("remote/%s" % args.name)
 
 
 # REST functions
