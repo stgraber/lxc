@@ -152,7 +152,7 @@ def cli_status(args):
     if not args.remote:
         status = get_status()
     else:
-        status = secure_remote_call(args.remote, 8443, "GET", "/status")
+        status = secure_remote_call(args.remote, "GET", "/status")
 
     for entry, entry_dict in sorted(status.items()):
         keys.append(entry_dict['description'])

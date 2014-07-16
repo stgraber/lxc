@@ -23,16 +23,23 @@
 import gettext
 import hashlib
 import json
+import os
 import socket
 import ssl
 
 from lxccmd.certs import get_cert_path
+from lxccmd.config import config_get, config_has_section, get_config_path
 from lxccmd.exceptions import LXCError
 
 try:
     from http.client import HTTPSConnection
 except:
     from httplib import HTTPSConnection
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 # Setup i18n
 _ = gettext.gettext
@@ -47,23 +54,23 @@ def remote_add_trusted(host, port, password, cert="client"):
     with open(client_crt, "r") as fd:
         cert = fd.read()
 
-    return secure_remote_call(host, port, "POST", "/server/trust", None,
-                              {'password': password,
-                               'cert': cert})
+    return remote_call(host, port, "POST", "/server/trust", None,
+                       data={'password': password,
+                             'cert': cert})
 
 
-def remote_get_fingerprint(host, port):
+def remote_get_certificate(host, port):
     """
         Connect to the target and retrieve the fingerprint.
     """
 
     try:
-        return hashlib.sha256(
-            ssl.PEM_cert_to_DER_cert(
-                ssl.get_server_certificate(
-                    (host, port)))).hexdigest()
+        certificate = ssl.get_server_certificate((host, port))
+
+        return certificate, hashlib.sha256(
+            ssl.PEM_cert_to_DER_cert(certificate)).hexdigest()
     except:
-        return False
+        return False, False
 
 
 def remote_get_role(host, port):
@@ -72,10 +79,10 @@ def remote_get_role(host, port):
     """
 
     try:
-        ret = secure_remote_call(host, port, "GET", "/server/whoami")
+        ret = remote_call(host, port, "GET", "/server/whoami")
     except:
         try:
-            ret = secure_remote_call(host, port, "GET", "/server/whoami", None)
+            ret = remote_call(host, port, "GET", "/server/whoami", None)
         except:
             raise LXCError(_("Unable to get current role."))
 
@@ -98,21 +105,58 @@ def server_is_running():
         return True
 
 
-def secure_remote_call(host, port, method, path, cert="client", data=None):
+def secure_remote_call(remote, method, path, data=None):
     """
-        Call a function using the authenticated REST API.
+        Call a remote function using the authenticated REST API.
+    """
+
+    if not config_has_section("remote/%s" % remote):
+        raise LXCError(_("Invalid remote server: %s" % remote))
+
+    remote_url = config_get("remote/%s" % remote, "url")
+    parsed_url = urlparse(remote_url)
+    remote_fingerprint = config_get("remote/%s" % remote, "fingerprint")
+
+    host = parsed_url.hostname
+    port = parsed_url.port
+    if not port:
+        port = 8443
+
+    return remote_call(host, port, method, path,
+                       fingerprint=remote_fingerprint,
+                       data=data)
+
+
+def remote_call(host, port, method, path, cert="client",
+                fingerprint=None, data=None):
+    """
+        Call a function using the REST API.
     """
 
     client_crt = None
     client_key = None
     client_capath = None
+
     if cert:
         client_crt, client_key, client_capath = get_cert_path(cert)
 
     try:
+        context = ssl._create_stdlib_context()
+
+        if fingerprint:
+            cert_path = os.path.join(get_config_path(), "certs")
+            ca_file = os.path.join(cert_path, "client-ca",
+                                   "%s.crt" % fingerprint)
+
+            if not os.path.exists(ca_file):
+                raise LXCError(_("Invalid certificate fingerprint."))
+
+            context.load_verify_locations(cafile=ca_file)
+
         conn = HTTPSConnection(host, port,
                                key_file=client_key,
-                               cert_file=client_crt)
+                               cert_file=client_crt,
+                               context=context)
         if data:
             params = json.dumps(data)
             headers = {'Content-Type': "application/json"}

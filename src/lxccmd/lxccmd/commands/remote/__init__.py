@@ -22,10 +22,11 @@
 # Import everything we need
 import gettext
 
+from lxccmd.certs import trust_cert_add
 from lxccmd.config import config_has_section, config_list_sections, \
     config_remove_section, config_get, config_set
 from lxccmd.exceptions import LXCError
-from lxccmd.network import remote_get_fingerprint, remote_get_role, \
+from lxccmd.network import remote_get_certificate, remote_get_role, \
     remote_add_trusted
 
 try:
@@ -83,7 +84,7 @@ def cli_add_remote(args):
     if not port:
         port = 8443
 
-    fingerprint = remote_get_fingerprint(host, port)
+    certificate, fingerprint = remote_get_certificate(host, port)
 
     if not fingerprint:
         raise LXCError(_("Unable to reach remote server."))
@@ -109,6 +110,8 @@ def cli_add_remote(args):
     config_set("remote/%s" % args.name, "url", args.url)
     config_set("remote/%s" % args.name, "fingerprint", fingerprint)
     config_set("remote/%s" % args.name, "type", "lxc-rest")
+
+    trust_cert_add(certificate, "client")
 
 
 def cli_list_remote(args):
