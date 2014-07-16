@@ -58,7 +58,7 @@ def remote_get_fingerprint(host, port):
     """
 
     try:
-        return hashlib.sha1(
+        return hashlib.sha256(
             ssl.PEM_cert_to_DER_cert(
                 ssl.get_server_certificate(
                     (host, port)))).hexdigest()

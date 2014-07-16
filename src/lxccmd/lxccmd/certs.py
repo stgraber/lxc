@@ -82,7 +82,7 @@ def get_fingerprint(cert_type):
         return False
 
     with open(os.path.join(cert_path, "%s.crt" % cert_type), "r") as fd:
-        return hashlib.sha1(ssl.PEM_cert_to_DER_cert(fd.read())).hexdigest()
+        return hashlib.sha256(ssl.PEM_cert_to_DER_cert(fd.read())).hexdigest()
 
 
 def trust_cert_add(x509_cert, trust_store):
@@ -91,7 +91,7 @@ def trust_cert_add(x509_cert, trust_store):
     """
 
     try:
-        fingerprint = hashlib.sha1(
+        fingerprint = hashlib.sha256(
             ssl.PEM_cert_to_DER_cert(x509_cert)).hexdigest()
     except:
         logging.error("Invalid x509 certificate.")
@@ -129,7 +129,7 @@ def trust_cert_remove(x509_cert, trust_store):
     """
 
     try:
-        fingerprint = hashlib.sha1(
+        fingerprint = hashlib.sha256(
             ssl.PEM_cert_to_DER_cert(x509_cert)).hexdigest()
     except:
         fingerprint = x509_cert
@@ -155,7 +155,7 @@ def trust_cert_verify(x509_cert, trust_store):
     """
 
     try:
-        fingerprint = hashlib.sha1(
+        fingerprint = hashlib.sha256(
             ssl.PEM_cert_to_DER_cert(x509_cert)).hexdigest()
     except:
         fingerprint = x509_cert
