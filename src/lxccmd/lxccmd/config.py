@@ -55,6 +55,32 @@ def config_get(section, key, default=None, answer_type=str):
     return answer_type(value)
 
 
+def config_has_section(section):
+    """
+        Returns True if a section exists, False otherwise.
+    """
+
+    config_file = "%s/lxccmd.conf" % get_config_path()
+
+    config = ConfigParser()
+    config.read(config_file)
+
+    return config.has_section(section)
+
+
+def config_list_sections():
+    """
+        Returns a list of all the config sections.
+    """
+
+    config_file = "%s/lxccmd.conf" % get_config_path()
+
+    config = ConfigParser()
+    config.read(config_file)
+
+    return config.sections()
+
+
 def config_set(section, key, value):
     """
         Sets a key in the configuration file.

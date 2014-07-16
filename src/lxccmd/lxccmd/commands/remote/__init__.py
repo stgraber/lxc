@@ -22,6 +22,16 @@
 # Import everything we need
 import gettext
 
+from lxccmd.config import config_has_section, config_list_sections
+from lxccmd.exceptions import LXCError
+from lxccmd.network import remote_get_fingerprint, remote_get_role, \
+    remote_add_trusted
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
+
 # Setup i18n
 _ = gettext.gettext
 
@@ -38,21 +48,83 @@ def cli_subparser(sp):
 
     # Service control
     sp_add = subparsers.add_parser("add", help=_("Add a remote server"))
+    sp_add.add_argument("name", metavar="NAME",
+                        help=_("Local name for the remote server"))
+    sp_add.add_argument("url", metavar="URL",
+                        help=_("URL of the remote server"))
+    sp_add.add_argument("--skip-fingerprint", action="store_true",
+                        help=_("Don't ask for fingerprint confirmation"))
+    sp_add.add_argument("--password", type=str, default=None,
+                        help=_("Password to use to setup the trust"))
+    sp_add.set_defaults(func=cli_add_remote)
 
     sp_list = subparsers.add_parser("list", help=_("List remote servers"))
+    sp_list.set_defaults(func=cli_list_remote)
 
     sp_remove = subparsers.add_parser("remove",
                                       help=_("Remove a remote server"))
+    sp_remove.add_argument("name", metavar="NAME",
+                           help=_("Local name of the remote server"))
+    sp_remove.set_defaults(func=cli_remove_remote)
 
-    assert(sp_add)
-    assert(sp_list)
-    assert(sp_remove)
+
+def cli_add_remote(args):
+    if config_has_section("remote/%s" % args.name):
+        raise LXCError(_("Remote '%s' already exists." % args.name))
+
+    parsed = urlparse(args.url)
+
+    if parsed.scheme not in ("https"):
+        raise LXCError(_("Invalid URL scheme '%s'.") % parsed.scheme)
+
+    host = parsed.hostname
+    port = parsed.port
+    if not port:
+        port = 8443
+
+    fingerprint = remote_get_fingerprint(host, port)
+
+    if not fingerprint:
+        raise LXCError(_("Unable to reach remote server."))
+
+    if not args.skip_fingerprint:
+        print(_("Remote server certificate fingerprint is: %s" % fingerprint))
+        if input(_("Is this correct? (yes/no): ")) != _("yes"):
+            return
+
+    role = remote_get_role(host, port)
+    if role == "guest":
+        if args.password:
+            password = args.passwd
+        else:
+            if not args.skip_fingerprint:
+                print("")
+            password = input(_("Remote password: "))
+
+        res = remote_add_trusted(host, port, password)
+        if "success" not in res:
+            raise LXCError(_("Invalid password."))
+
+#    remote_add(args.name, args.url, fingerprint)
+
+
+def cli_list_remote(args):
+    for entry in config_list_sections():
+        if not entry.startswith("remote/"):
+            continue
+
+        print(entry.split("remote/", 1)[-1])
+
+
+def cli_remove_remote(args):
+    if not config_has_section("remote/%s" % args.name):
+        raise LXCError(_("Remote '%s' doesn't exist." % args.name))
 
 
 # REST functions
-def rest_get_remotes():
+def rest_list_remote():
     return {}
 
 
 def rest_functions():
-    return {("trusted", "GET", "/remote"): rest_get_remotes}
+    return {("trusted", "GET", "/remote"): rest_list_remote}

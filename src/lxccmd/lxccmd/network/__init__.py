@@ -21,6 +21,7 @@
 
 # Import everything we need
 import gettext
+import hashlib
 import json
 import socket
 import ssl
@@ -35,6 +36,50 @@ except:
 
 # Setup i18n
 _ = gettext.gettext
+
+
+def remote_add_trusted(host, port, password, cert="client"):
+    """
+        Setup a trust relationship with a remote server using a password.
+    """
+
+    client_crt, client_key, client_capath = get_cert_path(cert)
+    with open(client_crt, "r") as fd:
+        cert = fd.read()
+
+    return secure_remote_call(host, port, "POST", "/server/trust", None,
+                              {'password': password,
+                               'cert': cert})
+
+
+def remote_get_fingerprint(host, port):
+    """
+        Connect to the target and retrieve the fingerprint.
+    """
+
+    try:
+        return hashlib.sha1(
+            ssl.PEM_cert_to_DER_cert(
+                ssl.get_server_certificate(
+                    (host, port)))).hexdigest()
+    except:
+        return False
+
+
+def remote_get_role(host, port):
+    """
+        Return the role (trusted or guest) as seen from the remote server.
+    """
+
+    try:
+        ret = secure_remote_call(host, port, "GET", "/server/whoami")
+    except:
+        try:
+            ret = secure_remote_call(host, port, "GET", "/server/whoami", None)
+        except:
+            raise LXCError(_("Unable to get current role."))
+
+    return ret['role']
 
 
 def server_is_running():
@@ -53,21 +98,30 @@ def server_is_running():
         return True
 
 
-def secure_remote_call(target, method, path, role="client", **args):
+def secure_remote_call(host, port, method, path, cert="client", data=None):
     """
         Call a function using the authenticated REST API.
     """
 
-    client_crt, client_key, client_capath = get_cert_path("client")
+    client_crt = None
+    client_key = None
+    client_capath = None
+    if cert:
+        client_crt, client_key, client_capath = get_cert_path(cert)
 
     try:
-        conn = HTTPSConnection(target, 8443,
+        conn = HTTPSConnection(host, port,
                                key_file=client_key,
                                cert_file=client_crt)
-        conn.request(method, path)
+        if data:
+            params = json.dumps(data)
+            headers = {'Content-Type': "application/json"}
+            conn.request(method, path, params, headers)
+        else:
+            conn.request(method, path)
         response = conn.getresponse()
         conn.close()
-    except ssl.SSLError:
+    except:
         raise LXCError(_("Remote function isn't available."))
 
     if response.status != 200:

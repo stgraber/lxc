@@ -105,13 +105,18 @@ class RequestHandler(BaseHTTPRequestHandler):
             except:
                 pass
 
-            self.send_response(200)
+            try:
+                ret = self.server.exported_functions[signature](args=args)
+                self.send_response(200)
+            except LXCError as e:
+                ret = {'error': e}
+                self.send_response(500)
+
             self.send_header("Content-type:", "application/json")
             self.end_headers()
             self.wfile.write(
-                json.dumps(
-                    self.server.exported_functions[signature](args=args),
-                    sort_keys=True, indent=4, separators=(',', ': ')).encode())
+                json.dumps(ret, sort_keys=True, indent=4,
+                           separators=(',', ': ')).encode())
 
             self.wfile.flush()
         except socket.timeout as e:
@@ -275,7 +280,17 @@ def cli_set(args):
 
 # REST functions
 def rest_functions():
-    return {("guest", "POST", "/server/trust"): rest_trust_add_as_guest}
+    return {("guest", "POST", "/server/trust"): rest_trust_add_as_guest,
+            ("guest", "GET", "/server/whoami"): rest_whoami_as_guest,
+            ("trusted", "GET", "/server/whoami"): rest_whoami_as_trusted}
+
+
+def rest_whoami_as_guest(args):
+    return {'role': "guest"}
+
+
+def rest_whoami_as_trusted(args):
+    return {'role': "trusted"}
 
 
 def rest_trust_add_as_guest(args):
