@@ -21,6 +21,7 @@
 
 # Import everything we need
 import os
+import errno
 
 try:
     from configparser import ConfigParser
@@ -145,4 +146,11 @@ def get_run_path():
     if "XDG_RUNTIME_DIR" in os.environ:
         return os.path.join(os.environ["XDG_RUNTIME_DIR"], "lxc")
 
-    return os.path.join("/tmp", "lxc-%s" % os.geteuid())
+    path = os.path.join("/tmp", "lxc-%s" % os.geteuid())
+    try:
+        os.mkdir(path, 0o755)
+    except (OSError, e):
+        if e.errno != errno.EEXIST:
+            raise e
+        pass
+    return path
