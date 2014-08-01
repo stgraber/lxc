@@ -31,6 +31,7 @@ import sys
 sys.path.insert(0, os.path.join(sys.path[0], os.pardir))
 
 from lxccmd.commands import get_commands
+from lxccmd.config import get_run_path
 from lxccmd.certs import generate_cert
 from lxccmd.exceptions import LXCError
 
@@ -49,6 +50,11 @@ logging.root.setLevel(os.getenv("DEBUG", "CRITICAL").upper())
 
 # Generate a client certificate if needed
 generate_cert("client")
+
+# Create the runtime directory if missing
+run_path = get_run_path()
+if not os.path.exists(run_path):
+    os.makedirs(run_path)
 
 # Load all the available commands
 commands = get_commands()
