@@ -97,7 +97,7 @@ def cli_add_remote(args):
     role = remote_get_role(host, port)
     if role == "guest":
         if args.password:
-            password = args.passwd
+            password = args.password
         else:
             if not args.skip_fingerprint:
                 print("")
